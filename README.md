@@ -1,3 +1,6 @@
+# NOTE: THIS PROJECT IS ON VERY EARLY STAGE
+
+
 (mirrored on [GitHub][GitHub mirror])
 
 [![builds.sr.ht status](https://builds.sr.ht/~mcf/cproc.svg)](https://builds.sr.ht/~mcf/cproc)
