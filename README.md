@@ -30,48 +30,14 @@ required as well.
 
 ## Supported targets
 
-All architectures supported by QBE should work (currently x86\_64 and
-aarch64).
+This fork of cproc work with new qbe compat implementation, which named as qberust.
+qberust has DAG and DSL(like LLVM's tablegen) based selection algorithm to implement retargetable instruction selection.
+currently, there is no target is supported. and we are planning to support few targets first in qberust.
 
-The following targets are tested by the continuous build and known to
-bootstrap and pass all tests:
-
-- `x86_64-linux-musl`
-- `x86_64-linux-gnu`
-- `x86_64-freebsd`
-- `aarch64-linux-musl`
-- `aarch64-linux-gnu`
-
-## Building
-
-Run `./configure` to create a `config.h` and `config.mk` appropriate for
-your system. If your system is not supported by the configure script,
-you can create these files manually. `config.h` should define several
-string arrays (`static char *[]`):
-
-- **`startfiles`**: Objects to pass to the linker at the beginning of
-  the link command.
-- **`endfiles`**: Objects to pass to the linker at the end of the link
-  command (including libc).
-- **`preprocesscmd`**: The preprocessor command, and any necessary flags
-  for the target system.
-- **`codegencmd`**: The QBE command, and possibly explicit target flags.
-- **`assemblecmd`**: The assembler command.
-- **`linkcmd`**: The linker command.
-
-You may also want to customize your environment or `config.mk` with the
-appropriate `CC`, `CFLAGS` and `LDFLAGS`.
-
-If you don't have QBE installed, you can build it from the included
-submodule (NOTE: BSD users will need to use gmake here), then add it to
-your PATH so that the driver will be able to run it.
-
-	make qbe
-	PATH=$PWD/qbe/obj:$PATH
-
-Once this is done, you can build with
-
-	make
+**Planned targets**
+* Very basic extensions with x64 archtecture
+* General ARM64 architecture (without any extensions)
+* General x86 archtecture (without any extensions)
 
 ### Bootstrap
 
