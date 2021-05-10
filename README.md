@@ -33,17 +33,6 @@ currently, there is no target is supported. and we are planning to support few t
 * General ARM64 architecture (without any extensions)
 * General x86 archtecture (without any extensions)
 
-### Bootstrap
-
-The `Makefile` includes several other targets that can be used for
-bootstrapping. These targets require the ability to run the tools
-specified in `config.h`.
-
-- **`stage2`**: Build the compiler with the initial (`stage1`) output.
-- **`stage3`**: Build the compiler with the `stage2` output.
-- **`bootstrap`**: Build the `stage2` and `stage3` compilers, and verify
-  that they are byte-wise identical.
-
 ## What's missing
 
 - Digraph and trigraph sequences ([6.4.6p3] and [5.2.1.1], will not
@@ -60,13 +49,14 @@ specified in `config.h`.
 
 ## Mailing list
 
+**cproc Team**
 There is a mailing list at [~mcf/cproc@lists.sr.ht]. Feel free to
 use it for general discussion, questions, patches, or bug reports
 (if you don't have an sr.ht account).
 
 ## Issue tracker
 
-Please report any issues to https://todo.sr.ht/~mcf/cproc.
+Please report any cproc related issues to https://todo.sr.ht/~mcf/cproc.
 
 ## Contributing
 
