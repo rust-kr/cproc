@@ -4,3 +4,8 @@
 /config.h
 /stage2
 /stage3
+
+
+# Added by cargo
+
+/target

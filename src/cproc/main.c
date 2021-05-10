@@ -15,7 +15,7 @@ usage(void)
 }
 
 int
-main(int argc, char *argv[])
+cproc_main(int argc, char *argv[])
 {
 	bool pponly = false;
 	char *output = NULL, *target = NULL;
