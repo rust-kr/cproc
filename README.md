@@ -20,16 +20,7 @@ It was inspired by several other small C compilers including [8cc],
 ## Requirements
 
 The compiler itself is written in standard C11 and can be built with
-any conforming C11 compiler.
-
-The POSIX driver depends on POSIX.1-2008 interfaces, and the `Makefile`
-requires a POSIX-compatible make(1).
-
-At runtime, you will need QBE, an assembler, and a linker for the
-target system. Currently, my personal [QBE branch] is recommended, since
-it may address some issues that have not yet made it upstream. Since
-the preprocessor is not yet implemented, an external one is currently
-required as well.
+any conforming C11 compiler. and Rust compiler (which is cargo and rustc)
 
 ## Supported targets
 
