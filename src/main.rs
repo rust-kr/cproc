@@ -1,13 +1,14 @@
-use std::ptr::null;
-use std::ffi::CStr;
 use std::env::args;
+use std::ffi::CString;
 
-#[no_mangle]
-extern fn cproc_main(args: i32, argv: &[*const char]) -> i32;
+extern "C" {
+    fn cproc_main(args: i32, argv: *const *const i8) -> i32;
+}
 
 fn main() {
-    let argv: Vec<CStr> = args().for_each(|a| CStr::from(a)).collect();
+    let argv: Vec<CString> = args().map(|a| CString::new(a).unwrap()).collect();
+    let argv: Vec<*const i8> = argv.iter().map(|a| a.as_ptr()).collect();
     let args = argv.len();
 
-    cproc_main(args, argv);
+    unsafe { cproc_main(args as i32, argv.as_ptr()); }
 }

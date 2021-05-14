@@ -33,8 +33,7 @@ fn main() -> Result<(), Box<dyn StdError + Send + Sync + 'static>> {
     cc.flag("-Wno-parentheses");
     cc.flag("-g");
     cc.flag("-Wno-switch");
-    cc.flag("-pipe");
-    cc.compile(&format!("{}/libcproc", env::var("OUT_DIR").unwrap()));
+    cc.compile("cproc");
 
     Ok(())
 }
