@@ -33,6 +33,7 @@ fn main() -> Result<(), Box<dyn StdError + Send + Sync + 'static>> {
     cc.flag("-Wno-parentheses");
     cc.flag("-g");
     cc.flag("-Wno-switch");
+    cc.warnings(false);
     cc.compile("cproc");
 
     Ok(())
