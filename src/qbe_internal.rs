@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![allow(unused_variables)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
@@ -36,7 +37,7 @@ extern "C" fn __qbe_emit_jump(t: &jump)  {
 }
 
 #[no_mangle]
-extern "C" fn __qbe_emit_func(t: &func)  {
+extern "C" fn __qbe_emit_func(t: &func, is_global: bool)  {
 
 }
 

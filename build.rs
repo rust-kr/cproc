@@ -38,15 +38,12 @@ fn main() -> Result<(), Box<dyn StdError + Send + Sync + 'static>> {
 
     // create bindings for C structures.
     let bindings = bindgen::builder()
+        .allowlist_recursively(true)
         .allowlist_type("name")
         .allowlist_type("repr")
         .allowlist_type("value")
-        .allowlist_type("lvalue")
-        .allowlist_type("instkind")
         .allowlist_type("inst")
         .allowlist_type("jump")
-        .allowlist_type("block")
-        .allowlist_type("switchcase")
         .allowlist_type("func")
         .allowlist_type("init")
         .header("src/cproc/qbe.h")

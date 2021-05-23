@@ -99,4 +99,13 @@ struct repr f64 = {'d', 'd'};
 struct repr iptr = {'l', 'l'};
 
 
+void __qbe_emit_name(struct name*);
+void __qbe_emit_value(struct value*);
+void __qbe_emit_repr(struct repr*, struct value*, bool);
+void __qbe_emit_type(struct type*);
+void __qbe_emit_inst(struct inst*);
+void __qbe_emit_jump(struct jump*);
+void __qbe_emit_func(struct func*, bool);
+void __qbe_emit_data(struct decl*, struct init*);
+
 #endif

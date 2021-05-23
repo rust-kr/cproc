@@ -930,351 +930,54 @@ funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block 
 static void
 emitname(struct name *n)
 {
-	if (n->str)
-		fputs(n->str, stdout);
-	if (n->id)
-		printf(".%" PRIu64, n->id);
+	__qbe_emit_name(n);
 }
 
 static void
 emitvalue(struct value *v)
 {
-	static char sigil[] = {
-		[VALUE_TEMP] = '%',
-		[VALUE_GLOBAL] = '$',
-		[VALUE_TYPE] = ':',
-	};
-
-	switch (v->kind) {
-	case VALUE_CONST:
-		if (v->repr->base == 's' || v->repr->base == 'd')
-			printf("%c_%.17g", v->repr->base, v->f);
-		else
-			printf("%" PRIu64, v->i);
-		break;
-	default:
-		if (v->kind >= LEN(sigil) || !sigil[v->kind])
-			fatal("invalid value");
-		putchar(sigil[v->kind]);
-		if (v->kind == VALUE_GLOBAL && v->name.id)
-			fputs(".L", stdout);
-		emitname(&v->name);
-	}
+	__qbe_emit_value(v);
 }
 
 static void
 emitrepr(struct repr *r, struct value *v, bool ext)
 {
-	if (!r)
-		fatal("type has no QBE representation");
-	if (v && v->kind == VALUE_TYPE)
-		emitvalue(v);
-	else
-		putchar(ext ? r->ext : r->base);
+	__qbe_emit_repr(r, v, ext);
 }
 
 /* XXX: need to consider _Alignas on struct members */
 static void
 emittype(struct type *t)
 {
-	static uint64_t id;
-	struct member *m, *other;
-	struct type *sub;
-	uint64_t i, off;
-
-	if (t->value || !t->repr || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
-		return;
-	t->value = xmalloc(sizeof(*t->value));
-	t->value->kind = VALUE_TYPE;
-	t->value->name.str = t->structunion.tag;
-	t->value->name.id = ++id;
-	for (m = t->structunion.members; m; m = m->next) {
-		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
-			;
-		emittype(sub);
-	}
-	fputs("type ", stdout);
-	emitvalue(t->value);
-	fputs(" = { ", stdout);
-	for (m = t->structunion.members, off = 0; m;) {
-		if (t->kind == TYPESTRUCT) {
-			/* look for a subsequent member with a larger storage unit */
-			for (other = m->next; other; other = other->next) {
-				if (other->offset >= ALIGNUP(m->offset + 1, 8))
-					break;
-				if (other->offset <= m->offset)
-					m = other;
-			}
-			off = m->offset + m->type->size;
-		} else {
-			fputs("{ ", stdout);
-		}
-		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
-			i *= sub->array.length;
-		emitrepr(sub->repr, sub->value, true);
-		if (i > 1)
-			printf(" %" PRIu64, i);
-		if (t->kind == TYPESTRUCT) {
-			fputs(", ", stdout);
-			/* skip subsequent members contained within the same storage unit */
-			do m = m->next;
-			while (m && m->offset < off);
-		} else {
-			fputs(" } ", stdout);
-			m = m->next;
-		}
-	}
-	puts("}");
+	__qbe_emit_type(t);
 }
 
 static struct inst **
 emitinst(struct inst **instp, struct inst **instend)
 {
-	int op, first;
-	struct inst *inst = *instp;
+	for (size_t idx = 0;; ++idx) {
+		struct inst* i = instp[idx];
+		__qbe_emit_inst(i);
+		if (i == instend) break; 
+	}
 
-	putchar('\t');
-	assert(inst->kind < LEN(instname));
-	if (inst->res.kind) {
-		emitvalue(&inst->res);
-		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->arg[1], false);
-		putchar(' ');
-	}
-	fputs(instname[inst->kind], stdout);
-	putchar(' ');
-	emitvalue(inst->arg[0]);
-	++instp;
-	op = inst->kind;
-	switch (op) {
-	case ICALL:
-	case IVACALL:
-		putchar('(');
-		for (first = 1; instp != instend && (*instp)->kind == IARG; ++instp) {
-			if (first)
-				first = 0;
-			else
-				fputs(", ", stdout);
-			inst = *instp;
-			emitrepr(inst->arg[0]->repr, inst->arg[1], false);
-			putchar(' ');
-			emitvalue(inst->arg[0]);
-		}
-		if (op == IVACALL)
-			fputs(", ...", stdout);
-		putchar(')');
-		break;
-	default:
-		if (inst->arg[1]) {
-			fputs(", ", stdout);
-			emitvalue(inst->arg[1]);
-		}
-	}
-	putchar('\n');
 	return instp;
 }
 
 static void
 emitjump(struct jump *j)
-{	
-	switch (j->kind) {
-	case JUMP_RET:
-		fputs("\tret", stdout);
-		if (j->arg) {
-			fputc(' ', stdout);
-			emitvalue(j->arg);
-		}
-		putchar('\n');
-		break;
-	case JUMP_JMP:
-		fputs("\tjmp @", stdout);
-		emitname(&j->blk[0]->label);
-		putchar('\n');
-		break;
-	case JUMP_JNZ:
-		fputs("\tjnz ", stdout);
-		emitvalue(j->arg);
-		fputs(", @", stdout);
-		emitname(&j->blk[0]->label);
-		fputs(", @", stdout);
-		emitname(&j->blk[1]->label);
-		putchar('\n');
-		break;
-	}
+{
+	__qbe_emit_jump(j);
 }
 
 void
 emitfunc(struct func *f, bool global)
 {
-	struct block *b;
-	struct inst **inst, **instend;
-	struct param *p;
-
-	if (f->end->jump.kind == JUMP_NONE)
-		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(&i32, 0) : NULL);
-	if (global)
-		puts("export");
-	fputs("function ", stdout);
-	if (f->type->base != &typevoid) {
-		emitrepr(f->type->base->repr, f->type->base->value, false);
-		putchar(' ');
-	}
-	emitvalue(f->decl->value);
-	putchar('(');
-	for (p = f->type->func.params; p; p = p->next) {
-		if (p != f->type->func.params)
-			fputs(", ", stdout);
-		emitrepr(p->value->repr, p->type->value, false);
-		putchar(' ');
-		emitvalue(p->value);
-	}
-	if (f->type->func.isvararg)
-		fputs(", ...", stdout);
-	puts(") {");
-	for (b = f->start; b; b = b->next) {
-		putchar('@');
-		emitname(&b->label);
-		putchar('\n');
-		if (b->phi.res.kind) {
-			putchar('\t');
-			emitvalue(&b->phi.res);
-			printf(" =%c phi @", b->phi.res.repr->base);
-			emitname(&b->phi.blk[0]->label);
-			putchar(' ');
-			emitvalue(b->phi.val[0]);
-			fputs(", @", stdout);
-			emitname(&b->phi.blk[1]->label);
-			putchar(' ');
-			emitvalue(b->phi.val[1]);
-			putchar('\n');
-		}
-		instend = (struct inst **)((char *)b->insts.val + b->insts.len);
-		for (inst = b->insts.val; inst != instend;)
-			inst = emitinst(inst, instend);
-		emitjump(&b->jump);
-	}
-	puts("}");
-}
-
-static void
-dataitem(struct expr *expr, uint64_t size)
-{
-	struct decl *decl;
-	size_t i;
-	char c;
-
-	switch (expr->kind) {
-	case EXPRUNARY:
-		if (expr->op != TBAND)
-			fatal("not a address expr");
-		expr = expr->base;
-		if (expr->kind != EXPRIDENT)
-			error(&tok.loc, "initializer is not a constant expression");
-		decl = expr->ident.decl;
-		if (decl->value->kind != VALUE_GLOBAL)
-			fatal("not a global");
-		emitvalue(decl->value);
-		break;
-	case EXPRBINARY:
-		if (expr->binary.l->kind != EXPRUNARY || expr->binary.r->kind != EXPRCONST)
-			error(&tok.loc, "initializer is not a constant expression");
-		dataitem(expr->binary.l, 0);
-		fputs(" + ", stdout);
-		dataitem(expr->binary.r, 0);
-		break;
-	case EXPRCONST:
-		if (expr->type->prop & PROPFLOAT)
-			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
-		else
-			printf("%" PRIu64, expr->constant.i);
-		break;
-	case EXPRSTRING:
-		fputc('"', stdout);
-		for (i = 0; i < expr->string.size && i < size; ++i) {
-			c = expr->string.data[i];
-			if (isprint(c) && c != '"' && c != '\\')
-				putchar(c);
-			else
-				printf("\\%03hho", c);
-		}
-		fputc('"', stdout);
-		if (i < size)
-			printf(", z %" PRIu64, size - i);
-		break;
-	default:
-		error(&tok.loc, "initializer is not a constant expression");
-	}
+	__qbe_emit_func(f, global);
 }
 
 void
 emitdata(struct decl *d, struct init *init)
 {
-	struct init *cur;
-	struct type *t;
-	uint64_t offset = 0, start, end, bits = 0;
-
-	if (!d->align)
-		d->align = d->type->align;
-	else if (d->align < d->type->align)
-		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, d->align);
-	for (cur = init; cur; cur = cur->next)
-		cur->expr = eval(cur->expr, EVALINIT);
-	if (d->linkage == LINKEXTERN)
-		fputs("export ", stdout);
-	fputs("data ", stdout);
-	emitvalue(d->value);
-	printf(" = align %d { ", d->align);
-
-	while (init) {
-		cur = init;
-		while ((init = init->next) && init->start * 8 + init->bits.before < cur->end * 8 - cur->bits.after) {
-			/*
-			XXX: Currently, if multiple union members are
-			initialized, these assertions may not hold.
-			(https://todo.sr.ht/~mcf/cproc/38)
-			*/
-			assert(cur->expr->kind == EXPRSTRING);
-			assert(init->expr->kind == EXPRCONST);
-			cur->expr->string.data[init->start - cur->start] = init->expr->constant.i;
-		}
-		start = cur->start + cur->bits.before / 8;
-		end = cur->end - (cur->bits.after + 7) / 8;
-		if (offset < start && bits) {
-			printf("b %u, ", (unsigned)bits);  /* unfinished byte from previous bit-field */
-			++offset;
-			bits = 0;
-		}
-		if (offset < start)
-			printf("z %" PRIu64 ", ", start - offset);
-		if (cur->bits.before || cur->bits.after) {
-			/* XXX: little-endian specific */
-			assert(cur->expr->type->prop & PROPINT);
-			assert(cur->expr->kind == EXPRCONST);
-			bits |= cur->expr->constant.i << cur->bits.before % 8;
-			for (offset = start; offset < end; ++offset, bits >>= 8)
-				printf("b %u, ", (unsigned)bits & 0xff);
-			/*
-			clear the upper `after` bits in the last byte,
-			or all bits when `after` is 0 (we ended on a
-			byte boundary).
-			*/
-			bits &= 0x7f >> (cur->bits.after + 7) % 8;
-		} else {
-			t = cur->expr->type;
-			if (t->kind == TYPEARRAY)
-				t = t->base;
-			printf("%c ", t->repr->ext);
-			dataitem(cur->expr, cur->end - cur->start);
-			fputs(", ", stdout);
-		}
-		offset = end;
-	}
-	if (bits) {
-		printf("b %u, ", (unsigned)bits);
-		++offset;
-	}
-	assert(offset <= d->type->size);
-	if (offset < d->type->size)
-		printf("z %" PRIu64 " ", d->type->size - offset);
-	puts("}");
+	__qbe_emit_data(d, init);
 }
