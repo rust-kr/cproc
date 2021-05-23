@@ -1,3 +1,6 @@
+#ifndef __CC_H__
+#define __CC_H__
+
 #include <stdio.h>
 
 struct func;
@@ -532,3 +535,5 @@ void emitfunc(struct func *, _Bool);
 void emitdata(struct decl *,  struct init *);
 
 extern struct repr i8, i16, i32, i64, f32, f64;
+
+#endif

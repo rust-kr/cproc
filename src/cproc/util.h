@@ -1,3 +1,9 @@
+#ifndef __UTIL_H__
+#define __UTIL_H__
+
+#include <inttypes.h>
+#include <stddef.h>
+
 struct list {
 	struct list *prev, *next;
 };
@@ -56,3 +62,5 @@ void *mapget(struct map *, struct mapkey *);
 /* tree */
 
 void *treeinsert(void **, uint64_t, size_t);
+
+#endif

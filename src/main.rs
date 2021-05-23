@@ -1,3 +1,6 @@
+mod qbe_internal;
+mod qbe;
+
 use std::env::args;
 use std::ffi::CString;
 
